@@ -521,54 +521,60 @@
     renderHistory();
 
     async function runWorkflow() {
-    const domain = document.getElementById('domainInput').value.trim();
+      const domain = document.getElementById('domainInput').value.trim();
 
-    if (!domain) {
-      setStatus('error', '⚠ Domain Required', 'Please enter a domain name first');
-      return;
-    }
-
-    setStatus('running', 'Processing...', `Running workflow for: ${domain}`);
-    document.getElementById('runBtn').disabled = true;
-    document.getElementById('domainInput').disabled = true;
-
-    try {
-      const response = await fetch(WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domain: domain })
-      });
-
-      // Check if the response is actually JSON and not Make.com's default plain text
-      const contentType = response.headers.get("content-type");
-
-      if (contentType && contentType.includes("application/json")) {
-        const data = await response.json();
-
-        if (response.ok && data.status !== 'error') {
-          // Triggered only when your final Success Webhook Response executes
-          setStatus('success', '✓ Completed!', `Google Sheet updated for: ${domain}`);
-          addHistory(domain, 'success');
-        } else {
-          // Triggered when your Error Webhook Responses execute
-          const msg = data.message || `Workflow encountered an error`;
-          setStatus('error', '✕ Failed', `Error: ${msg}`);
-          addHistory(domain, 'error');
-        }
-      } else {
-        // Triggered when scenario is Inactive or 0 bundles (skips to end)
-        setStatus('error', '✕ Workflow Skipped', 'Domain not found or scenario is inactive');
-        addHistory(domain, 'error');
+      if (!domain) {
+        setStatus('error', '⚠ Domain Required', 'Please enter a domain name first');
+        return;
       }
 
-    } catch (err) {
-      setStatus('error', '✕ Connection Failed', 'Could not reach Make.com server');
-      addHistory(domain, 'error');
-    } finally {
-      document.getElementById('runBtn').disabled = false;
-      document.getElementById('domainInput').disabled = false;
+      setStatus('running', 'Processing...', `Running workflow for: ${domain}`);
+      document.getElementById('runBtn').disabled = true;
+      document.getElementById('domainInput').disabled = true;
+
+      try {
+        const response = await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ domain: domain })
+        });
+
+        const contentType = response.headers.get("content-type");
+
+        if (contentType && contentType.includes("application/json")) {
+          const data = await response.json();
+
+          if (response.ok && data.status !== 'error') {
+            setStatus('success', '✓ Completed!', `Google Sheet updated for: ${domain}`);
+            addHistory(domain, 'success');
+          } else {
+            const msg = data.message || `Workflow encountered an error`;
+            setStatus('error', '✕ Failed', `Error: ${msg}`);
+            addHistory(domain, 'error');
+          }
+        } else {
+          // Handle plain text responses from Make.com
+          const textData = await response.text();
+
+          if (response.status === 200 || textData.toLowerCase().includes('accepted')) {
+            // Scenario is active, but 0 bundles found (Skipped path)
+            setStatus('error', '✕ Domain Not Found', 'The entered domain does not exist in the database');
+            addHistory(domain, 'error');
+          } else {
+            // Scenario is turned OFF / Inactive (Make returns 404 or 503 status)
+            setStatus('error', '✕ Inactive Workflow', 'The workflow scenario is currently not active');
+            addHistory(domain, 'error');
+          }
+        }
+
+      } catch (err) {
+        setStatus('error', '✕ Connection Failed', 'Could not reach Make.com server');
+        addHistory(domain, 'error');
+      } finally {
+        document.getElementById('runBtn').disabled = false;
+        document.getElementById('domainInput').disabled = false;
+      }
     }
-  }
 
     function setStatus(type, title, sub) {
       const box = document.getElementById('statusBox');
