@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Lock down where scripts run and where the page may connect, to shrink the XSS /
+       data-exfiltration surface. Only Google's sign-in + API hosts and the fonts CDN are allowed. -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' https://accounts.google.com https://apis.google.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data: blob: https://*.googleusercontent.com;
+    connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://searchconsole.googleapis.com https://script.google.com https://script.googleusercontent.com https://fonts.googleapis.com https://fonts.gstatic.com;
+    frame-src https://accounts.google.com;
+    worker-src 'self' blob:;
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>GSC Suite - Search Console Automation Studio</title>
+  <link rel="icon" type="image/png" href="./favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body>
+
+  <!-- ============================ NAVBAR ============================ -->
+  <nav class="navbar">
+    <div class="nav-brand" data-nav="home">
+      <img class="nav-logo" src="./favicon.ico" alt="GSC Suite logo" width="42" height="42">
+      <div>
+        <h1>GSC Suite</h1>
+        <div class="tag">Automation Studio</div>
+      </div>
+    </div>
+    <button class="nav-toggle" id="navToggle" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="18" x2="21" y2="18" />
+      </svg>
+    </button>
+    <div class="nav-links" id="navLinks">
+      <button class="nav-btn active" data-nav="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M3 9.5L12 3l9 6.5V21a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
+          <path d="M9 22V12h6v10" />
+        </svg>
+        Home
+      </button>
+      <button class="nav-btn" data-nav="crawl">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          <line x1="11" y1="8" x2="11" y2="11" />
+          <line x1="11" y1="11" x2="13" y2="13" />
+        </svg>
+        Crawl Date Tracker
+      </button>
+      <button class="nav-btn" data-nav="audit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <path d="M14 2v6h6" />
+          <path d="M8 13h2M8 17h2" />
+          <path d="m13.5 15.5 1.5 1.5 3-3" />
+        </svg>
+        GSC Audit Studio
+      </button>
+      <button class="nav-btn admin-only" data-nav="admin">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5z" />
+          <path d="m9 12 2 2 4-4" />
+        </svg>
+        Admin Dashboard
+      </button>
+      <button class="nav-btn nav-admin-toggle" id="adminToggleBtn" title="Admin access">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" />
+          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+        <span class="atb-label">Admin</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ============================ HOME VIEW ============================ -->
+  <section class="view active" id="view-home">
+    <div class="wrapper">
+      <div class="hero">
+        <div class="eyebrow">Google Search Console · Workflow Automation</div>
+        <h2>One studio for your<br><span class="accent">Search Console</span> audits</h2>
+        <p>Two powerful automations in a single clean workspace. Bulk-check last crawl dates across hundreds of URLs,
+          and generate full client-ready audit reports - straight from your browser, no extension required.</p>
+        <div class="hero-cta">
+          <button class="btn btn-primary" data-nav="crawl">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            Launch Crawl Tracker
+          </button>
+          <button class="btn btn-ghost" data-nav="audit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <path d="M14 2v6h6" />
+            </svg>
+            Open Audit Studio
+          </button>
+        </div>
+      </div>
+
+      <div class="tool-grid">
+        <div class="tool-card" data-nav="crawl">
+          <div class="tc-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              <line x1="11" y1="8" x2="11" y2="11" />
+              <line x1="11" y1="11" x2="13" y2="13" />
+            </svg>
+          </div>
+          <h3>Crawl Date Tracker</h3>
+          <p>Paste up to 100 URLs and pull each page's last Google crawl date and index status in one run. Pause,
+            resume, stop anytime, and export a clean CSV.</p>
+          <div class="tc-meta">
+            <span class="tc-pill">BULK · 100 URLs</span>
+            <span class="tc-pill">CSV EXPORT</span>
+            <span class="tc-pill">LIVE PROGRESS</span>
+          </div>
+          <div class="tc-go">Open tool
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+              stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="tool-card" data-nav="audit">
+          <div class="tc-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <path d="M14 2v6h6" />
+              <path d="M8 13h2M8 17h2" />
+              <path d="m13.5 15.5 1.5 1.5 3-3" />
+            </svg>
+          </div>
+          <h3>GSC Audit Studio</h3>
+          <p>Sign in with Google, pick your domains, and generate a full PPTX audit deck - sitemaps, indexing,
+            canonicals, rich results, image search and performance - in the James, Omega, or Neon format.</p>
+          <div class="tc-meta">
+            <span class="tc-pill">PPTX REPORTS</span>
+            <span class="tc-pill">3 FORMATS</span>
+            <span class="tc-pill">GSC API</span>
+          </div>
+          <div class="tc-go">Open tool
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+              stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-stats">
+        <div class="stat">
+          <div class="n">100</div>
+          <div class="l">URLs per crawl batch</div>
+        </div>
+        <div class="stat">
+          <div class="n">19</div>
+          <div class="l">Slides in a James deck</div>
+        </div>
+        <div class="stat">
+          <div class="n">3</div>
+          <div class="l">Report formats</div>
+        </div>
+        <div class="stat">
+          <div class="n">0</div>
+          <div class="l">Extensions to install</div>
+        </div>
+      </div>
+
+      <div class="footer">Built for <span>Search Console</span> teams &nbsp;·&nbsp; Runs entirely in your browser</div>
+    </div>
+  </section>
+
+  <!-- ============================ CRAWL TRACKER VIEW ============================ -->
+  <section class="view" id="view-crawl">
+    <div class="wrapper">
+      <div class="page-head">
+        <div class="eyebrow">GSC Last Crawl Date Checker</div>
+        <h2>Crawl Date <span class="accent">Tracker</span></h2>
+        <p>Paste up to <span class="chip">100 URLs</span>, run the check, pause anytime, and export the result as a
+          clean CSV.</p>
+      </div>
+
+      <div class="card">
+        <label class="input-label"><span>URLs (one per line, max 100)</span></label>
+        <textarea id="urlsInput"
+          placeholder="https://example.com/page-1&#10;https://anotherdomain.com/about&#10;https://thirdsite.com/contact"
+          spellcheck="false"></textarea>
+        <div class="count-row" id="urlCount"><span>0 / 100 URLs</span><span id="domainSummary"></span></div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="runBtn">&#9654;&nbsp; Run</button>
+          <button class="btn btn-pause" id="pauseBtn" disabled>&#10074;&#10074;&nbsp; Pause</button>
+          <button class="btn btn-resume" id="resumeBtn" disabled>&#9654;&nbsp; Resume</button>
+          <button class="btn btn-stop" id="stopBtn" disabled>&#9632;&nbsp; Stop</button>
+        </div>
+
+        <div class="progress-box" id="progressBox">
+          <div class="progress-info">
+            <span><span class="progress-state idle" id="progressState">Idle</span> &nbsp; <span id="progressCount">0 /
+                0</span></span>
+            <span id="progressEta"></span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-info"><span id="progressDetail">Ready</span></div>
+        </div>
+      </div>
+
+      <div class="card" id="resultsCard" style="display:none">
+        <div class="results-header"
+          style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px">
+          <h3 style="margin:0">Results <span class="mono"
+              style="font-size:11px;color:var(--muted-2);letter-spacing:1.2px;text-transform:uppercase;margin-left:8px">Live</span>
+          </h3>
+          <button class="btn btn-primary btn-sm" id="downloadCsvBtn">&darr;&nbsp; Download CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>URL</th>
+                <th>Domain</th>
+                <th>Last Crawl Date</th>
+                <th>Index Status</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="footer">Connected to <span>Google Apps Script</span> &nbsp;·&nbsp; Config Hidden</div>
+    </div>
+  </section>
+
+  <!-- ============================ AUDIT STUDIO VIEW ============================ -->
+  <section class="view" id="view-audit">
+    <div class="wrapper">
+      <div class="page-head">
+        <div class="eyebrow">GSC Audit Studio · PPTX Reports</div>
+        <h2>Audit <span class="accent">Studio</span></h2>
+        <p>Generate full James, Omega or Neon audit decks for your domains - powered by the live <span
+            class="chip">Search Console API</span>.</p>
+      </div>
+
+      <div class="subtabs" id="auditSubtabs">
+        <button class="subtab active" data-sub="run">Run Audit</button>
+        <button class="subtab" data-sub="accounts">Accounts</button>
+        <button class="subtab" data-sub="screenshots">Screenshots</button>
+        <button class="subtab admin-only" data-sub="domains">Domain List</button>
+        <button class="subtab admin-only" data-sub="setup">Setup</button>
+        <button class="subtab" data-sub="help">Help</button>
+      </div>
+
+      <!-- ---------- RUN ---------- -->
+      <div class="subpanel active" id="sub-run">
+        <div id="oauthNotReady" class="alert alert-warn" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          <div><strong>Google sign-in not configured.</strong> Open the <a href="#" data-sub-link="setup">Setup</a> tab
+            and add an OAuth <em>Web</em> Client ID whose authorized JavaScript origin matches this page's address. Then
+            connect an account in <a href="#" data-sub-link="accounts">Accounts</a>.</div>
+        </div>
+
+        <div class="card">
+          <h3>Generate Report</h3>
+          <p class="help">Paste one or more domains, one per line. Each domain is matched to the right Google account
+            from your mapping, then the full deck is generated with no further input.</p>
+
+          <div class="field">
+            <label>Default format for new domains</label>
+            <select id="default-format">
+              <option value="james">James - full 19-slide analytics deck (live API)</option>
+              <option value="omega">Omega - corporate 8-slide screenshot deck</option>
+              <option value="neon">Neon - modern 8-slide screenshot deck</option>
+            </select>
+          </div>
+
+          <label class="input-label"><span>Domains (one per line)</span></label>
+          <textarea id="domains-input" placeholder="azskymechanical.com&#10;subtelink.com&#10;skraba.co.uk"
+            spellcheck="false"></textarea>
+          <div id="domain-preview" class="domain-preview"></div>
+
+          <div class="row" id="james-options" style="margin-top:18px">
+            <label><input type="checkbox" id="include-manual-action" checked> Include Manual Action slide</label>
+            <label><input type="checkbox" id="include-security" checked> Include Security Issues slide</label>
+          </div>
+          <div class="row" id="period-options">
+            <label>Audit period (days back): <input type="number" id="period-days" value="28" min="7" max="90"></label>
+            <label>End date offset (days ago): <input type="number" id="end-offset" value="3" min="0" max="7"></label>
+          </div>
+
+          <div class="actions">
+            <button id="run-btn" class="btn btn-primary">Generate Report(s)</button>
+            <button id="refresh-mapping-btn" class="btn btn-ghost">Refresh domain list</button>
+            <button id="clear-log-btn" class="btn btn-ghost">Clear Log</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Progress</h3>
+          <div class="progress-bar-track" style="margin:14px 0">
+            <div class="progress-bar-fill" id="audit-progress-fill"></div>
+          </div>
+          <pre id="audit-log" class="log"></pre>
+        </div>
+      </div>
+
+      <!-- ---------- ACCOUNTS ---------- -->
+      <div class="subpanel" id="sub-accounts">
+        <div class="card">
+          <h3>Connected Google Accounts</h3>
+          <p class="help">Sign in once per Google account. Access tokens are kept only for this browser tab's session
+            (about one hour) and refreshed silently when you generate a report. No client secret is stored - sign-in
+            uses
+            Google Identity Services directly.</p>
+          <div class="alert alert-warn" id="accounts-msg" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <div class="alert-text" style="white-space:pre-wrap"></div>
+          </div>
+          <div class="field-inline" style="margin-bottom:18px">
+            <input type="email" id="new-account-email" placeholder="searchconsoleanalyticsaccess8@gmail.com"
+              style="flex:1;min-width:240px">
+            <button id="connect-account-btn" class="btn btn-primary">Connect Account</button>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Connected</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="accounts-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ---------- SCREENSHOTS ---------- -->
+      <div class="subpanel" id="sub-screenshots">
+        <div class="card">
+          <h3>Manual Screenshots <span class="mono"
+              style="font-size:11px;color:var(--accent);letter-spacing:1px">OPTIONAL</span></h3>
+          <div class="alert alert-info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <div>A website can't silently screenshot the Search Console UI the way the extension did. Instead, drop in
+              screenshots you capture from GSC and they'll be embedded into the report slides (Manual Action &amp;
+              Security for James; all four pages for Omega / Neon). Leave any blank - slides without an image show a
+              tidy placeholder.</div>
+          </div>
+          <div class="shot-grid" id="shot-grid"></div>
+        </div>
+      </div>
+
+      <!-- ---------- DOMAINS ---------- -->
+      <div class="subpanel" id="sub-domains">
+        <div class="card">
+          <h3>Domain List</h3>
+          <p class="help">Pulled live from the Apps Script set in <a href="#" data-sub-link="setup">Setup</a>. Read-only
+            here. To add or change a domain, edit the <code>GSC_Config</code> tab in the master Google Sheet.</p>
+          <div class="field-inline" style="margin-bottom:14px">
+            <input type="text" id="domain-filter" placeholder="Filter domains…" style="flex:1;min-width:200px">
+            <button id="refresh-mapping-btn-2" class="btn btn-primary btn-sm">Refresh from Apps Script</button>
+            <button id="export-mapping-btn" class="btn btn-ghost btn-sm">Export CSV</button>
+          </div>
+          <div class="info-block" id="mapping-status">Loading…</div>
+          <table class="data-table" style="margin-top:14px">
+            <thead>
+              <tr>
+                <th>Domain</th>
+                <th>Account</th>
+                <th>Access Level</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="mapping-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ---------- SETUP ---------- -->
+      <div class="subpanel" id="sub-setup">
+        <div class="card">
+          <h3>Apps Script Endpoint</h3>
+          <p class="help">Web App URL of the Apps Script that owns the master <code>GSC_Config</code> sheet. The studio
+            fetches the domain → account mapping from here.</p>
+          <div class="field"><label>Apps Script Web App URL</label>
+            <input type="text" id="apps-script-url" placeholder="https://script.google.com/macros/s/.../exec">
+          </div>
+          <div class="actions">
+            <button id="test-apps-script-btn" class="btn btn-ghost">Test connection</button>
+            <button id="save-apps-script-btn" class="btn btn-primary">Save</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Google OAuth Client</h3>
+          <p class="help">A single OAuth <strong>Web application</strong> Client ID from the <a
+              href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener">Google Cloud
+              Console</a>. No client secret is needed in the browser. Add this page's address as an <em>Authorized
+              JavaScript origin</em> on that client.</p>
+          <div class="info-block" style="margin-bottom:16px">
+            <strong>This page's origin:</strong> <span class="mono" id="page-origin"></span><br>
+            Add the line above under <em>Authorized JavaScript origins</em> for your OAuth client, and enable the
+            <em>Google Search Console API</em> for the project.
+          </div>
+          <div class="field"><label>OAuth Client ID</label>
+            <input type="text" id="client-id" placeholder="123456789-abc.apps.googleusercontent.com">
+          </div>
+          <div class="actions"><button id="save-settings-btn" class="btn btn-primary">Save</button></div>
+        </div>
+
+        <div class="card">
+          <h3>How to use</h3>
+          <ol class="steps">
+            <li><strong>Configure once.</strong> Paste your Apps Script URL and OAuth Client ID above and save.</li>
+            <li><strong>Connect accounts.</strong> In the Accounts tab, sign in to each Google account that has Search
+              Console access.</li>
+            <li><strong>Run reports.</strong> Paste domains in Run Audit, pick a format, and click Generate. PPTX files
+              download automatically.</li>
+          </ol>
+        </div>
+
+        <div class="card">
+          <h3>Data &amp; privacy</h3>
+          <p class="help">Everything runs in your browser — no server stores your data. Search Console access tokens are
+            kept only in this tab's <code>sessionStorage</code> and disappear when you close the tab. The OAuth Client
+            ID,
+            Apps Script URL and cached domain list live in <code>localStorage</code> on this device only. No client
+            secret
+            is ever used or stored.</p>
+          <div class="actions"><button id="clear-data-btn" class="btn btn-stop">Clear all saved data</button></div>
+        </div>
+      </div>
+
+      <!-- ---------- HELP ---------- -->
+      <div class="subpanel" id="sub-help">
+        <div class="card">
+          <h3>How to use this tool</h3>
+          <ol class="steps">
+            <li><strong>Configure once.</strong> In the Setup tab, paste your Apps Script URL and your OAuth
+              <em>Web</em> Client ID (with this page's origin added as an Authorized JavaScript origin), then Save.
+            </li>
+            <li><strong>Connect your Google accounts.</strong> Go to the Accounts tab, type each Google account you
+              handle
+              and click Connect. Sign in once — the token lasts for the browser session and refreshes silently.</li>
+            <li><strong>Run reports.</strong> Paste one or more domains in the Run Audit tab, one per line. The preview
+              under the textarea shows which account each domain uses and whether you're signed in. Pick a format and
+              click Generate Report(s).</li>
+            <li><strong>Find your reports.</strong> PPTX files download to your Downloads folder — about 10–20 seconds
+              per
+              domain for the James format.</li>
+          </ol>
+        </div>
+
+        <div class="card">
+          <h3>Preview legend</h3>
+          <p class="help">When you type domains in Run Audit, each line shows a coloured indicator:</p>
+          <ul class="legend">
+            <li><span class="dot dot-ok"></span> <strong>Green</strong> — Domain is in the master sheet and its account
+              is
+              connected in this browser. Ready to go.</li>
+            <li><span class="dot dot-warn"></span> <strong>Yellow</strong> — Domain is mapped to an account, but that
+              account isn't connected yet. When you click Generate, a sign-in popup appears once for it.</li>
+            <li><span class="dot dot-err"></span> <strong>Red</strong> — Domain is NOT in the master sheet. Add it to
+              the
+              <code>GSC_Config</code> tab of the master Google Sheet (or ask your admin).
+            </li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3>Troubleshooting</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>What you see</th>
+                <th>What to do</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>"Access blocked: no registered origin" / Error 401: invalid_client</td>
+                <td>Your OAuth client doesn't list this page's address. In Setup, copy "This page's origin" and add it
+                  under
+                  <em>Authorized JavaScript origins</em> on your OAuth Web client, then re-enter the Client ID.
+                </td>
+              </tr>
+              <tr>
+                <td>"Not in master sheet" for a domain you expect to work</td>
+                <td>Add it via the master Google Sheet, then click "Refresh domain list".</td>
+              </tr>
+              <tr>
+                <td>"Session expired" for an account</td>
+                <td>Accounts tab → Disconnect that account → Connect it again.</td>
+              </tr>
+              <tr>
+                <td>Manual Action / Security / Sitemap slide is blank</td>
+                <td>Upload a screenshot for it in the Screenshots tab — browsers can't capture the GSC UI automatically.
+                </td>
+              </tr>
+              <tr>
+                <td>Anything unexpected</td>
+                <td>Clear the log, reproduce the issue, and screenshot the log panel in the Run Audit tab.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="footer">GSC Audit Studio &nbsp;·&nbsp; <span>Web Edition</span></div>
+    </div>
+  </section>
+
+  <!-- ============================ ADMIN DASHBOARD VIEW ============================ -->
+  <section class="view" id="view-admin">
+    <div class="wrapper">
+      <div class="page-head">
+        <div class="eyebrow">Restricted Area · Admin</div>
+        <h2>Admin <span class="accent">Dashboard</span></h2>
+        <p>Manage accounts, domains and configuration for the whole studio. Visible only while admin mode is unlocked.</p>
+      </div>
+
+      <div class="home-stats" style="margin-top:0">
+        <div class="stat">
+          <div class="n" id="adm-accounts">0</div>
+          <div class="l">Connected accounts</div>
+        </div>
+        <div class="stat">
+          <div class="n" id="adm-domains">0</div>
+          <div class="l">Domains in mapping</div>
+        </div>
+        <div class="stat">
+          <div class="l" style="margin-bottom:8px">OAuth client</div>
+          <span class="status-pill warn" id="adm-oauth">Not set</span>
+        </div>
+        <div class="stat">
+          <div class="l" style="margin-bottom:8px">Apps Script</div>
+          <span class="status-pill warn" id="adm-script">Not set</span>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:24px">
+        <h3>Quick actions</h3>
+        <p class="help">Jump straight to the management screens.</p>
+        <div class="actions">
+          <button class="btn btn-primary" data-admin-go="setup">Open Setup</button>
+          <button class="btn btn-ghost" data-admin-go="domains">Manage Domain List</button>
+          <button class="btn btn-ghost" data-admin-go="accounts">Manage Accounts</button>
+          <button class="btn btn-ghost" data-admin-go="screenshots">Manage Screenshots</button>
+          <button class="btn btn-stop" data-admin-go="lock">Lock admin mode</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Admin quick reference</h3>
+        <ul class="legend">
+          <li><span class="dot dot-ok"></span> <strong>Add a domain:</strong> edit the <code>GSC_Config</code> tab of the
+            master Google Sheet, then open Domain List → Refresh from Apps Script.</li>
+          <li><span class="dot dot-ok"></span> <strong>Connect an account:</strong> Accounts tab → type the GSC email →
+            Connect. Tokens live in this tab's session only.</li>
+          <li><span class="dot dot-warn"></span> <strong>OAuth setup:</strong> register this page's origin (shown in
+            Setup) under your OAuth Web client's Authorized JavaScript origins, then paste the Client ID in Setup.</li>
+          <li><span class="dot dot-err"></span> <strong>Reset everything:</strong> Setup → "Clear all saved data" wipes
+            tokens, Client ID, Apps Script URL and the cached domain list from this browser.</li>
+        </ul>
+      </div>
+
+      <div class="footer">Admin Dashboard &nbsp;·&nbsp; <span>Password protected</span></div>
+    </div>
+  </section>
+
+  <!-- ============================ SCRIPTS ============================ -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="./lib/pptxgen.bundle.js"></script>
+  <script src="./js/report-builder.js"></script>
+  <script src="./js/format-omega.js"></script>
+  <script src="./js/format-neon.js"></script>
+  <script src="./js/ui.js"></script>
+  <script src="./js/app.js"></script>
+  <script src="./js/crawl-tracker.js"></script>
+  <script src="./js/audit-studio.js"></script>
+  <script src="./js/admin.js"></script>
+</body>
+
+</html>
